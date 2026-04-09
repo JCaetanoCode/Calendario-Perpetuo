@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <title>Calendário Perpétuo</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <style type="text/css">
+        /* Estilo para o PC e Layout Geral */
+        body {
+            font-family: Verdana, Arial, Helvetica, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #ffffff;
+            text-align: center;
+        }
+
+        .tabela-mestra {
+            width: 100%;
+            max-width: 770px;
+            margin: 0 auto;
+        }
+
+        .img-header {
+            max-width: 100%;
+            height: auto;
+        }
+
+        /* Estilo do Calendário Gerado */
+        #Calendrier table {
+            font-family: Verdana, Arial, Helvetica, sans-serif;
+            font-size: 11px;
+            border-collapse: collapse;
+            background-color: #F5F5F5;
+            margin: 0 auto;
+            border: 1px solid #999999;
+        }
+
+        #Calendrier td {
+            border: 1px solid #cccccc;
+            padding: 5px;
+        }
+
+        /* Ajuste de Botões e Seletores */
+        select, input[type="button"] {
+            font-family: Verdana;
+            font-size: 12px;
+            color: #000033;
+            padding: 4px;
+        }
+
+        .TITRE {
+            font-size: 14px;
+            color: #000033;
+        }
+
+        /* --- CONFIGURAÇÃO PARA CELULAR (O "ZOOM") --- */
+        @media screen and (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+
+            /* Faz o calendário ocupar a largura total da tela do celular */
+            #Calendrier table {
+                width: 100% !important;
+                font-size: 16px !important; /* Aumenta a letra para ler melhor */
+            }
+
+            #Calendrier td {
+                padding: 10px 2px !important; /* Aumenta a área de toque */
+            }
+
+            /* Aumenta os botões e seletores para o polegar */
+            select {
+                font-size: 16px !important;
+                margin-bottom: 10px;
+                display: inline-block;
+            }
+
+            input[type="button"] {
+                width: 90%;
+                padding: 15px !important;
+                font-size: 16px !important;
+                margin: 10px 0;
+            }
+            
+            .titulo-topo {
+                font-size: 20px !important;
+            }
+        }
+    </style>
+
+    <script language="JavaScript">
+        var HTMLCode = "";
+        var DaysList = new Array("Jour_Vide", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom");
+        var MonthsList = new Array("Mois_Vide", "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outobro", "Novembro", "Dezembro");
+        var MonthLength = new Array("Mois_longueur_vide", 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31);
+
+        var Today = new Date();
+        var TodaysYear = Today.getFullYear();
+        var TodaysMonth = Today.getMonth() + 1;
+        var TodaysDate = Today.getDate();
+
+        function CheckLeap(yy) {
+            if ((yy % 100 != 0 && yy % 4 == 0) || (yy % 400 == 0)) { return 29; }
+            else { return 28; }
+        }
+
+        function Date2Days(yy, mm, dd) {
+            if (mm > 2) {
+                var bis = Math.floor(yy / 4) - Math.floor(yy / 100) + Math.floor(yy / 400);
+                var zy = Math.floor(yy * 365 + bis);
+                var zm = (mm - 1) * 31 - Math.floor(mm * 0.4 + 2.3);
+                return (zy + zm + dd);
+            } else {
+                var bis = Math.floor((yy - 1) / 4) - Math.floor((yy - 1) / 100) + Math.floor((yy - 1) / 400);
+                var zy = Math.floor(yy * 365 + bis);
+                return (zy + (mm - 1) * 31 + dd);
+            }
+        }
+
+        function DefDateDay(yy, mm, dd) {
+            return Math.floor((Date2Days(yy, mm, dd) - 2) % 7) + 1;
+        }
+
+        function DefWeekNum(dd) {
+            var numd = 0;
+            for (var n = 1; n < QueryMonth; n++) { numd += MonthLength[n]; }
+            numd = numd + dd - (9 - DefDateDay(QueryYear, 1, 1));
+            var numw = Math.floor(numd / 7) + 1;
+            if (DefDateDay(QueryYear, 1, 1) == 1) { numw++; }
+            return numw;
+        }
+
+        function CheckData() {
+            QueryDate = document.Cal.Date.selectedIndex + 1;
+            QueryMonth = document.Cal.Month.selectedIndex + 1;
+            QueryYear = (document.Cal.Century.selectedIndex + 15) * 100 + document.Cal.Year.selectedIndex;
+            MonthLength[2] = CheckLeap(QueryYear);
+
+            if ((QueryYear * 10000 + QueryMonth * 100 + QueryDate) < 15821220) {
+                alert("Data anterior ao Calendário Gregoriano (1582).");
+                document.Cal.reset();
+            } else if (MonthLength[QueryMonth] < QueryDate) {
+                alert("Este mês não tem " + QueryDate + " dias.");
+                document.Cal.reset();
+            } else {
+                DisplaySchedule();
+            }
+        }
+
+        function DisplaySchedule() {
+            HTMLCode = "<table cellspacing=0 cellpadding=3 border=1>";
+            QueryDay = DefDateDay(QueryYear, QueryMonth, QueryDate);
+            WeekRef = DefWeekNum(QueryDate);
+            WeekOne = DefWeekNum(1);
+            HTMLCode += "<tr align=center><td colspan=8 class='TITRE'><b>" + MonthsList[QueryMonth] + " " + QueryYear + "</b></td></tr><tr align=center>";
+
+            for (var s = 1; s < 8; s++) {
+                if (QueryDay == s) { HTMLCode += "<td><b><font color=#ff0000>" + DaysList[s] + "</font></b></td>"; }
+                else { HTMLCode += "<td><b>" + DaysList[s] + "</b></td>"; }
+            }
+            HTMLCode += "<td><b><font color=#888888>Sem</font></b></td></tr>";
+            
+            var a = 0;
+            for (var i = (1 - DefDateDay(QueryYear, QueryMonth, 1)); i < MonthLength[QueryMonth]; i++) {
+                HTMLCode += "<tr align=center>";
+                for (var j = 1; j < 8; j++) {
+                    if ((i + j) <= 0) { HTMLCode += "<td>&nbsp;</td>"; }
+                    else if ((i + j) == QueryDate) { HTMLCode += "<td><b><font color=#ff0000>" + (i + j) + "</font></b></td>"; }
+                    else if ((i + j) > MonthLength[QueryMonth]) { HTMLCode += "<td>&nbsp;</td>"; }
+                    else { HTMLCode += "<td>" + (i + j) + "</td>"; }
+                }
+                HTMLCode += "<td><font color=#888888>" + (WeekOne + a) + "</font></td></tr>";
+                a++;
+                i = i + 6;
+            }
+            document.getElementById('Calendrier').innerHTML = HTMLCode + "</table>";
+        }
+    </script>
+</head>
+
+<body onload="CheckData()">
+
+    <table class="tabela-mestra" border="0" cellpadding="0" cellspacing="0">
+        <tr>
+            <td style="padding: 15px 0;">
+                <img src="imagens/calendario.png" class="img-header" alt="JC - Calendário Perpétuo">
+            </td>
+        </tr>
+    </table>
+
+    <div class="titulo-topo" style="font-weight: bold; font-size: 14px; margin-bottom: 20px;">
+        Calendário Perpétuo
+    </div>
+
+    <form name="Cal">
+        <center>
+            <script language="JavaScript">
+                // Geração dos menus suspensos
+                document.write("<select name='Date'>");
+                for (var d=1; d<32; d++) {
+                    document.write("<option" + (d == TodaysDate ? " SELECTED" : "") + ">" + (d < 10 ? "0"+d : d) + "</option>");
+                }
+                document.write("</select> ");
+
+                document.write("<select name='Month'>");
+                for (var m=1; m<13; m++) {
+                    document.write("<option" + (m == TodaysMonth ? " SELECTED" : "") + ">" + MonthsList[m] + "</option>");
+                }
+                document.write("</select> ");
+
+                document.write("<select name='Century'>");
+                for (var c=15; c<25; c++) {
+                    document.write("<option" + (c == Math.floor(TodaysYear / 100) ? " SELECTED" : "") + ">" + c + "</option>");
+                }
+                document.write("</select>");
+
+                document.write("<select name='Year'>");
+                for (var y=0; y<100; y++) {
+                    var curY = TodaysYear % 100;
+                    document.write("<option" + (y == curY ? " SELECTED" : "") + ">" + (y < 10 ? "0"+y : y) + "</option>");
+                }
+                document.write("</select>");
+            </script>
+            
+            <input type="button" style="font-weight: bold" onclick="CheckData()" value=" OK ">
+            <br><br>
+            <input type="button" style="font-weight: bold" onclick="document.Cal.reset();CheckData()" value=" Ver a data atual ">
+            <br><br>
+            
+            <div id="Calendrier"></div>
+        </center>
+    </form>
+
+</body>
+</html>
